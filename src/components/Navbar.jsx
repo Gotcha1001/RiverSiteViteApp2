@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { auth } from "../firebaseconfig/firebase";
 import { signOut, onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
     const [user, setUser] = useState(null);
@@ -11,6 +12,7 @@ export default function Navbar() {
     const dropdownRefUpdate = useRef(null);
     const adminEmail = "admin@example.com";
     const clickSoundRef = useRef(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         clickSoundRef.current = new Audio("/long-whoosh.mp3");
@@ -50,7 +52,7 @@ export default function Navbar() {
     const logout = async () => {
         try {
             await signOut(auth);
-            window.location.reload(); // Reload the page after logout
+            navigate("/"); // Redirect to the home page after logout
         } catch (error) {
             console.error(error);
         }

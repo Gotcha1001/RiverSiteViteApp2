@@ -23,7 +23,8 @@ const PrayerRequests = () => {
 
     const indexOfLastPost = currentPage * itemsPerPage;
     const indexOfFirstPost = indexOfLastPost - itemsPerPage;
-    const currentRequests = prayerRequests.slice(prayerRequests.length - indexOfLastPost, prayerRequests.length - indexOfFirstPost);
+    const currentRequests = prayerRequests.slice(indexOfFirstPost, indexOfLastPost);
+
 
 
     const paginate = pageNumber => setCurrentPage(pageNumber);
