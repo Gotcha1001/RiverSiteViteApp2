@@ -1,14 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseconfig/firebase';
+import VideoEmbed from './VideoEmbed';
 
-const Pagination = ({ postsPerPage, totalPosts, paginate, currentPage, nextPage, prevPage }) => {
-    const pageNumbers = [];
-
-    for (let i = 1; i <= Math.ceil(totalPosts / postsPerPage); i++) {
-        pageNumbers.push(i);
-    }
-
+const Pagination = ({ postsPerPage, totalPosts, currentPage, nextPage, prevPage }) => {
     return (
         <nav>
             <ul className="flex justify-center mt-4">
@@ -21,21 +16,16 @@ const Pagination = ({ postsPerPage, totalPosts, paginate, currentPage, nextPage,
                         Previous
                     </button>
                 </li>
-                {pageNumbers.map(number => (
-                    <li key={number} className="mx-2">
-                        <button
-                            onClick={() => paginate(number)}
-                            className={`page-link px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === number ? 'bg-teal-500 text-white' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
-                        >
-                            {number}
-                        </button>
-                    </li>
-                ))}
+                <li className="mx-2">
+                    <span className="page-link px-4 py-2 rounded shadow-md border border-teal-500 bg-teal-500 text-white">
+                        {currentPage}
+                    </span>
+                </li>
                 <li>
                     <button
                         onClick={nextPage}
-                        className={`page-link mx-2 px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === pageNumbers.length ? 'cursor-not-allowed text-gray-500' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
-                        disabled={currentPage === pageNumbers.length}
+                        className={`page-link mx-2 px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === Math.ceil(totalPosts / postsPerPage) ? 'cursor-not-allowed text-gray-500' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
+                        disabled={currentPage === Math.ceil(totalPosts / postsPerPage)}
                     >
                         Next
                     </button>
@@ -56,7 +46,24 @@ const FacebookLive = () => {
         const fetchVideos = async () => {
             try {
                 const querySnapshot = await getDocs(collection(db, 'facebook-video'));
-                const videoList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const videoList = querySnapshot.docs.map(doc => {
+                    const data = doc.data();
+                    let date;
+                    if (data.date && data.date.toDate) {
+                        date = data.date.toDate();
+                    } else if (data.date) {
+                        date = new Date(data.date * 1000);
+                    }
+                    return {
+                        id: doc.id,
+                        ...data,
+                        date
+                    };
+                });
+
+                // Sort videoList by date in descending order (most recent first)
+                videoList.sort((a, b) => b.date - a.date);
+
                 setVideos(videoList);
                 setLoading(false);
             } catch (err) {
@@ -69,7 +76,7 @@ const FacebookLive = () => {
         fetchVideos();
     }, []);
 
-    // Get current videos
+    // Get current videos for pagination
     const indexOfLastVideo = currentPage * videosPerPage;
     const indexOfFirstVideo = indexOfLastVideo - videosPerPage;
     const currentVideos = videos.slice(indexOfFirstVideo, indexOfLastVideo);
@@ -93,30 +100,18 @@ const FacebookLive = () => {
             {currentVideos.map((video) => (
                 <div
                     key={video.id}
-                    className="card-content mb-8 bg-teal-500 p-4 rounded-lg mx-auto w-full lg:w-2/3"
+                    className="card-content mb-8 bg-slate-950 p-4 rounded-lg mx-auto w-full lg:w-2/3"
                 >
                     <h2 className="text-2xl font-bold text-white">{video.title}</h2>
                     <p className="text-lg text-gray-300 mb-1">Sermon By: {video.sermonBy}</p>
-                    <p className="text-lg text-gray-300 mb-1">Date: {new Date(video.date).toLocaleDateString()}</p>
-                    {video.embeddable ? (
-                        <div className="video-container">
-                            <FacebookVideo videoUrl={video.videoUrl} />
-                        </div>
-                    ) : (
-                        <p className="text-red-500">
-                            This video cannot be embedded. You can watch it{' '}
-                            <a href={video.videoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                                here
-                            </a>.
-                        </p>
-                    )}
+                    <p className="text-lg text-gray-300 mb-1">Date: {formatDate(video.date)}</p>
+                    <VideoEmbed videoUrl={video.videoUrl} />
                     <p className="text-gray-300 mt-4">{video.content}</p>
                 </div>
             ))}
             <Pagination
                 postsPerPage={videosPerPage}
                 totalPosts={videos.length}
-                paginate={paginate}
                 currentPage={currentPage}
                 nextPage={nextPage}
                 prevPage={prevPage}
@@ -125,21 +120,11 @@ const FacebookLive = () => {
     );
 };
 
-const FacebookVideo = ({ videoUrl }) => {
-    const embedUrl = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(videoUrl)}&show_text=false&width=734`;
-
-    return (
-        <div>
-            <iframe
-                src={embedUrl}
-                width="100%"
-                height="100%"
-                style={{ border: 'none', overflow: 'hidden', borderRadius: '8px' }}
-                allowFullScreen={true}
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-            ></iframe>
-        </div>
-    );
+// Helper function to format date as "day, month, year"
+const formatDate = (date) => {
+    if (!date) return ''; // Handle case where date is null or undefined
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return date instanceof Date ? date.toLocaleDateString(undefined, options) : ''; // Format Date object
 };
 
 export default FacebookLive;

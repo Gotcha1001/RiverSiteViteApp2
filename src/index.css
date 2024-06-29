@@ -7,7 +7,7 @@
   background: linear-gradient(
     90deg,
     #000000,
-    #434343
+    #0d3978
   ); /* Black to dark gray gradient */
   color: white;
   padding: 15px 30px;
@@ -51,7 +51,7 @@
 }
 
 .navbar-links a:hover {
-  color: #cccccc; /* Lighter gray for hover */
+  color: #06b6d4; /* Teal color for hover */
 }
 
 .upload-link {
@@ -100,6 +100,11 @@
 
 .prayer-request-item p {
   margin: 0.5rem 0;
+}
+
+/* Ensure the submitted by and date text is always visible */
+.prayer-request-item p.text-gray-900 {
+  color: white; /* Dark gray color */
 }
 
 .prayer-request-item img {
@@ -270,4 +275,59 @@
 
 .object-contain {
   object-fit: contain;
+}
+
+/* Define a reusable gradient animation */
+.gradient-background {
+  background: linear-gradient(300deg, #3a0d92, #800812, #e00404);
+  background-size: 180% 180%;
+  animation: gradient-animation 6s ease infinite;
+}
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-background1 {
+  background: linear-gradient(300deg, #f0f0f5, #0b3c44, #082346);
+  background-size: 180% 180%;
+  animation: gradient-animation 6s ease infinite;
+}
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-background2 {
+  background: linear-gradient(300deg, #000000, #000000, #efe8e8);
+  background-size: 180% 180%;
+  animation: gradient-animation 6s ease infinite;
+}
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }

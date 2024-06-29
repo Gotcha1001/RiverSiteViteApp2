@@ -1,23 +1,28 @@
 import React, { useState } from 'react';
-import { db } from '../firebaseconfig/firebase';
+import { db, Timestamp } from '../firebaseconfig/firebase'; // Import Timestamp from firebase config
 import { collection, addDoc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom'; // Use useNavigate for navigation
+import { useNavigate } from 'react-router-dom';
 
 export default function AddPost() {
-    const [date, setDate] = useState('');
+    const [date, setDate] = useState(''); // State to hold selected date
     const [imgUrl, setImgUrl] = useState('');
     const [postedBy, setPostedBy] = useState('');
     const [content, setContent] = useState('');
     const [likes, setLikes] = useState(0);
     const [message, setMessage] = useState('');
-    const navigate = useNavigate(); // Initialize the useNavigate hook for navigation
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
+            // Convert the selected date string to a JavaScript Date object
+            const selectedDate = new Date(date);
+            // Convert the Date object to a Firestore Timestamp
+            const dateTimestamp = Timestamp.fromDate(selectedDate);
+
             await addDoc(collection(db, 'daily-posts'), {
-                date,
+                date: dateTimestamp,
                 imgUrl,
                 postedBy,
                 content,
@@ -29,7 +34,7 @@ export default function AddPost() {
             setPostedBy('');
             setContent('');
             setLikes(0);
-            navigate('/daily-posts'); // Use navigate to redirect to the Daily Posts page
+            navigate('/daily-posts');
         } catch (error) {
             console.error('Error adding document: ', error);
             setMessage('Failed to add post.');

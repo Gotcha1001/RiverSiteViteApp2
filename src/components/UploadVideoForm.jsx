@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebaseconfig/firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Timestamp } from 'firebase/firestore';
 
 const UploadVideoForm = ({ onVideoUploaded }) => {
     const [title, setTitle] = useState('');
     const [sermonBy, setSermonBy] = useState('');
     const [videoUrl, setVideoUrl] = useState('');
     const [content, setContent] = useState('');
-    const [date, setDate] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [userName, setUserName] = useState('');
@@ -39,7 +39,7 @@ const UploadVideoForm = ({ onVideoUploaded }) => {
                 sermonBy,
                 videoUrl,
                 content,
-                date,
+                date: Timestamp.fromDate(new Date()), // Use current date as Timestamp
                 userName,
                 embeddable: canEmbed
             });
@@ -48,11 +48,10 @@ const UploadVideoForm = ({ onVideoUploaded }) => {
             setSermonBy('');
             setVideoUrl('');
             setContent('');
-            setDate('');
             setError(null);
 
             // Notify parent component that a new video has been uploaded
-            onVideoUploaded();
+            alert('Video uploaded successfully!');
 
             // Redirect to the facebook-live page
             navigate('/facebook-live');
@@ -124,16 +123,6 @@ const UploadVideoForm = ({ onVideoUploaded }) => {
                     required
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-40 resize-none whitespace-pre-wrap"
                 ></textarea>
-            </div>
-            <div className="mb-4">
-                <label className="block text-gray-700 font-semibold mb-2">Date:</label>
-                <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    required
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
             </div>
             <button
                 type="submit"

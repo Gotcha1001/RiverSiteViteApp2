@@ -11,7 +11,7 @@ const Worship = () => {
 
     return (
         <div className="flex flex-col justify-start items-center min-h-screen bg-gradient-to-r from-black to-white pt-20">
-            <h1 className="text-4xl font-bold text-white mb-8">Worship</h1>
+            <h1 className="text-4xl font-bold text-white mb-8 zoom">Worship</h1>
             <div className="w-64 h-64 rounded-full shadow-lg overflow-hidden">
                 <img
                     src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdr1DMONakU9MUecTXVHg290MknEaXlFRhrA&s"
@@ -21,15 +21,57 @@ const Worship = () => {
             </div>
 
             {/* Original Worship content */}
-            <div className="w-full max-w-lg bg-white shadow-lg rounded-lg p-6 mb-8 mt-8 transition-transform transform hover:scale-105"> {/* Added mt-8 for margin top */}
-                <h2 className="text-3xl font-bold text-center text-black mb-4">What is Worship?</h2>
-                <p className="text-lg text-gray-700 text-center hover:text-teal-500 transition duration-300">
+            <div className="w-full max-w-lg bg-slate-950 shadow-lg rounded-lg p-6 mb-8 mt-8 transition-transform transform hover:scale-105"> {/* Added mt-8 for margin top */}
+                <h2 className="text-3xl font-bold text-center text-gray-200 mb-4 zoom">What is Worship?</h2>
+                <p className="text-lg text-gray-200 text-center hover:text-teal-500 transition duration-300">
                     Worship is the heart's cry of gratitude and love,<br />
                     A sacred moment with the divine above.<br />
                     It's in the whispers of the soul at peace,<br />
                     In songs of joy that never cease.<br />
                     Worship is more than words can say,<br />
                     It's a life lived in a holy way.<br />
+                </p>
+            </div>
+
+            <div className="w-full max-w-lg bg-slate-950 shadow-lg rounded-lg p-6 mb-8 mt-8 transition-transform transform hover:scale-105"> {/* Added mt-8 for margin top */}
+                <h2 className="text-3xl font-bold text-center text-gray-200 mb-4 zoom">What is Worship?</h2>
+                <p className="text-lg text-gray-200 text-center hover:text-teal-500 transition duration-300">
+                    The Light of Grace
+
+                    In the stillness of the morning light,
+                    When dawn breaks through the endless night,
+                    A whisper echoes, pure and true,
+                    The name of Jesus, ever new.<br />
+                    <br />
+                    In fields of green and skies so blue,
+                    His love surrounds, His grace imbues.
+                    A shepherd’s heart, a savior’s call,
+                    He lifts the weak, redeems us all.<br />
+                    <br />
+                    With gentle hands, He heals the lame,
+                    Restores the blind, erases shame.
+                    A crown of thorns, a cross He bore,
+                    For all our sins, forevermore.<br />
+                    <br />
+                    His voice like thunder, calm yet strong,
+                    Through every trial, He leads along.
+                    In valleys deep and mountains high,
+                    His presence lingers, ever nigh.<br />
+                    <br />
+                    O Lamb of God, so pure and kind,
+                    In You, true peace our hearts do find.
+                    You conquered death, the grave defied,
+                    Our risen Lord, forever glorified.<br />
+                    <br />
+                    In shadows cast by doubt and fear,
+                    Your light breaks forth, Your love draws near.
+                    No greater love could e’er be shown,
+                    Than Christ, our King, on heaven’s throne.<br />
+                    <br />
+                    We lift our voices, hearts ablaze,
+                    In endless songs of wondrous praise.
+                    For Jesus Christ, the Holy One,
+                    Our hope, our joy, God’s precious Son
                 </p>
             </div>
 

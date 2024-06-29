@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebaseconfig/firebase';
+import { db, Timestamp } from '../firebaseconfig/firebase';
 import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export default function UpdateDailyPost() {
+
+    // Helper function to format date as "day, month year"
+    const formatDate = (date) => {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+    };
+
     const [posts, setPosts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [postsPerPage] = useState(5); // Number of posts per page
@@ -14,7 +21,13 @@ export default function UpdateDailyPost() {
             try {
                 const q = query(collection(db, 'daily-posts'));
                 const querySnapshot = await getDocs(q);
-                const postsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+                const postsData = querySnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    date: doc.data().date.toDate() // Convert Firestore Timestamp to Date
+                }));
+                // Sort posts by date in descending order (latest first)
+                postsData.sort((a, b) => b.date - a.date);
                 setPosts(postsData);
             } catch (err) {
                 console.error('Error fetching posts:', err);
@@ -44,13 +57,14 @@ export default function UpdateDailyPost() {
         try {
             const postRef = doc(db, 'daily-posts', id);
             await updateDoc(postRef, {
-                date,
+                date: Timestamp.fromDate(new Date(date)), // Convert date to Timestamp
                 content,
                 imgUrl,
                 likes,
                 postedBy
             });
             setIsDialogOpen(false);
+            window.location.reload(); // Refresh the page after update
         } catch (err) {
             console.error('Error updating post:', err);
         }
@@ -83,7 +97,7 @@ export default function UpdateDailyPost() {
                             className="bg-gray-800 text-white rounded-lg shadow-lg p-6 mb-4"
                         >
                             <h2 className="text-2xl font-bold mb-4">{post.content}</h2>
-                            <p className="mb-4"><strong>Date:</strong> {new Date(post.date).toLocaleDateString()}</p>
+                            <p className="mb-4"><strong>Date:</strong> {formatDate(new Date(post.date))}</p>
                             <p className="mb-4"><strong>Posted By:</strong> {post.postedBy}</p>
                             {post.imgUrl && (
                                 <div className="mb-4 flex justify-center">
@@ -208,7 +222,7 @@ export default function UpdateDailyPost() {
                 </button>
                 <button
                     onClick={() => paginate(currentPage)}
-                    className={`page-link px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === 1 ? 'bg-teal-500 text-white' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
+                    className={`page-link px-4 py-2 rounded shadow-md border border-teal-500 text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg`}
                 >
                     {currentPage}
                 </button>

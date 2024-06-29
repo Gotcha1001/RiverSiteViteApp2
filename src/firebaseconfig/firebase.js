@@ -1,5 +1,3 @@
-// firebase.js
-
 import { getApps, initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -8,9 +6,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
-  signOut, // Add signOut to the list of imports
+  signOut,
+  sendEmailVerification,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, Timestamp } from "firebase/firestore";
 
 // Your Firebase configuration
 const firebaseConfig = {
@@ -36,7 +35,9 @@ export {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
-  signOut, // Export signOut
+  signOut,
+  sendEmailVerification,
   db,
   GoogleAuthProvider,
+  Timestamp,
 };

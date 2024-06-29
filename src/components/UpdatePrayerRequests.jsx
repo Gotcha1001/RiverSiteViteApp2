@@ -1,182 +1,172 @@
-import React, { useEffect, useState } from 'react';
-import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore'; // Adjusted import
-import { db } from '../firebaseconfig/firebase';
+import React, { useState, useEffect } from 'react';
+import { db, Timestamp } from '../firebaseconfig/firebase';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-export default function UpdatePrayerRequests() {
+export default function UpdatePrayerRequest() {
     const [prayerRequests, setPrayerRequests] = useState([]);
-    const [editingRequest, setEditingRequest] = useState(null);
-    const [formValues, setFormValues] = useState({ title: '', content: '', picUrl: '' });
-    const [currentPage, setCurrentPage] = useState(1);
-    const [postsPerPage] = useState(5); // Number of posts per page
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchPrayerRequests = async () => {
-            const querySnapshot = await getDocs(collection(db, 'prayer-requests'));
-            const requests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            requests.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date
-            setPrayerRequests(requests);
+            try {
+                const querySnapshot = await getDocs(collection(db, 'prayer-requests'));
+                const requestsData = querySnapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        ...data,
+                        date: data.date.toDate(), // Convert Firestore Timestamp to Date
+                    };
+                });
+                // Sort requests by date in descending order (latest first)
+                requestsData.sort((a, b) => b.date - a.date);
+                setPrayerRequests(requestsData);
+            } catch (err) {
+                console.error('Error fetching prayer requests:', err);
+            }
         };
 
         fetchPrayerRequests();
     }, []);
 
+    const handleUpdateClick = (request) => {
+        setSelectedRequest({
+            ...request,
+            date: request.date.toISOString().split('T')[0], // Format date for input[type="date"]
+        });
 
-    const handleEdit = (request) => {
-        setEditingRequest(request.id);
-        setFormValues({ title: request.title, content: request.content, picUrl: request.picUrl });
+        setIsDialogOpen(true);
     };
 
-    const handleDelete = async (requestId) => {
-        await deleteDoc(doc(db, 'prayer-requests', requestId));
-        setPrayerRequests(prayerRequests.filter(request => request.id !== requestId));
-    };
-
-    const handleApprove = async (requestId) => {
-        await updateDoc(doc(db, 'prayer-requests', requestId), { approved: true });
-        setPrayerRequests(prayerRequests.map(request =>
-            request.id === requestId ? { ...request, approved: true } : request
-        ));
-    };
-
-    const handleChange = (e) => {
-        setFormValues({ ...formValues, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        await updateDoc(doc(db, 'prayer-requests', editingRequest), formValues);
-        setEditingRequest(null);
-        const updatedRequests = [...prayerRequests];
-        const index = updatedRequests.findIndex(request => request.id === editingRequest);
-        if (index !== -1) {
-            updatedRequests[index] = { id: editingRequest, ...formValues };
-            updatedRequests.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date
-            setPrayerRequests(updatedRequests);
+    const handleDeleteClick = async (requestId) => {
+        try {
+            await deleteDoc(doc(db, 'prayer-requests', requestId));
+            setPrayerRequests(prayerRequests.filter(request => request.id !== requestId));
+        } catch (err) {
+            console.error('Error deleting prayer request:', err);
         }
     };
 
+    const handleUpdate = async (event) => {
+        event.preventDefault();
+        const { id, date, content, userName, picUrl } = selectedRequest;
 
-    const indexOfLastPost = currentPage * postsPerPage;
-    const indexOfFirstPost = indexOfLastPost - postsPerPage;
-    const currentRequests = prayerRequests.slice(indexOfFirstPost, indexOfLastPost);
+        try {
+            const requestRef = doc(db, 'prayer-requests', id);
+            await updateDoc(requestRef, {
+                date: Timestamp.fromDate(new Date(date)), // Convert date string to Firestore Timestamp
+                content,
+                userName,
+                picUrl, // Include picUrl in the update
+            });
+            setIsDialogOpen(false);
+            window.location.reload(); // Refresh the page after update
+        } catch (err) {
+            console.error('Error updating prayer request:', err);
+        }
+    };
 
-    const paginate = (pageNumber) => setCurrentPage(pageNumber);
-    const nextPage = () => setCurrentPage((prevPage) => Math.min(prevPage + 1, Math.ceil(prayerRequests.length / postsPerPage)));
-    const prevPage = () => setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
+    const handleApprove = async (requestId) => {
+        try {
+            const requestRef = doc(db, 'prayer-requests', requestId);
+            await updateDoc(requestRef, {
+                isApproved: true
+            });
+            setPrayerRequests(prayerRequests.map(request => request.id === requestId ? { ...request, isApproved: true } : request));
+        } catch (err) {
+            console.error('Error approving prayer request:', err);
+        }
+    };
+
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        setSelectedRequest(prevRequest => ({
+            ...prevRequest,
+            [name]: value,
+        }));
+    };
 
     return (
-        <div className="flex flex-col items-center min-h-screen bg-gradient-to-r from-black to-white p-4">
-            <h1 className="text-4xl font-bold text-white my-8">Update Prayer Requests</h1>
-            {editingRequest ? (
-                <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg mx-auto">
-                    <h2 className="text-2xl font-bold mb-4">Edit Prayer Request</h2>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 font-semibold mb-2">Title:</label>
-                        <input
-                            type="text"
-                            name="title"
-                            value={formValues.title}
-                            onChange={handleChange}
-                            required
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+        <div className="flex flex-col items-center">
+            <h1 className="text-4xl font-bold my-8">Edit Prayer Request</h1>
+            {prayerRequests.map(request => (
+                <div key={request.id} className="p-4 border mb-4 rounded">
+                    <h2 className="text-xl font-bold mb-2">{request.title}</h2>
+                    <p className="mb-2"><strong>Content:</strong> {request.content}</p>
+                    <p className="mb-2">
+                        <strong>Date:</strong> {request.date.toLocaleDateString('en-GB')}
+                    </p>
+                    <p className="mb-2"><strong>User Name:</strong> {request.userName}</p>
+                    {request.picUrl && <img src={request.picUrl} alt="Prayer Request" className="mb-2 rounded-lg max-w-full h-auto" />}
+                    <div className="flex">
+                        <button className="bg-blue-500 text-white px-4 py-2 rounded mr-2" onClick={() => handleUpdateClick(request)}>Edit</button>
+                        <button className="bg-red-500 text-white px-4 py-2 rounded mr-2" onClick={() => handleDeleteClick(request.id)}>Delete</button>
+                        {!request.isApproved && (
+                            <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={() => handleApprove(request.id)}>Approve</button>
+                        )}
                     </div>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 font-semibold mb-2">Content:</label>
-                        <textarea
-                            name="content"
-                            value={formValues.content}
-                            onChange={handleChange}
-                            required
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-40 resize-none"
-                            style={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}
-                        ></textarea>
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 font-semibold mb-2">Picture URL:</label>
-                        <input
-                            type="text"
-                            name="picUrl"
-                            value={formValues.picUrl}
-                            onChange={handleChange}
-                            required
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
-                    >
-                        Save Changes
-                    </button>
-                </form>
-            ) : (
-                <div className="w-full max-w-2xl mt-8">
-                    {currentRequests.map(request => (
-                        <div key={request.id} className="bg-white p-6 rounded-lg shadow-md mb-4">
-                            <h2 className="text-xl font-bold">{request.title}</h2>
-                            <p className="text-gray-700">{request.content}</p>
-                            {request.picUrl && (
-                                <div className="w-full h-80 mt-4">
-                                    <img
-                                        src={request.picUrl}
-                                        alt={request.title}
-                                        className="object-cover w-full h-full"
-                                    />
-                                </div>
-                            )}
-
-                            <p className="text-gray-500 text-sm mt-2">Submitted by: {request.userName}</p>
-                            <p className="text-gray-500 text-sm">Date: {new Date(request.date).toLocaleString()}</p>
-                            <div className="flex space-x-4 mt-4">
-                                <button
-                                    className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-300"
-                                    onClick={() => handleEdit(request)}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300"
-                                    onClick={() => handleDelete(request.id)}
-                                >
-                                    Delete
-                                </button>
-                                {!request.approved && (
-                                    <button
-                                        className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300"
-                                        onClick={() => handleApprove(request.id)}
-                                    >
-                                        Approve
-                                    </button>
-                                )}
+                </div>
+            ))}
+            {isDialogOpen && selectedRequest && (
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                    <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
+                        <h2 className="text-2xl font-bold mb-4">Edit Prayer Request</h2>
+                        <form onSubmit={handleUpdate}>
+                            <div className="mb-4">
+                                <label htmlFor="date" className="block text-gray-700 font-bold mb-2">Date:</label>
+                                <input
+                                    type="date"
+                                    id="date"
+                                    name="date"
+                                    value={selectedRequest.date}
+                                    onChange={handleChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    required
+                                />
                             </div>
-                        </div>
-                    ))}
+                            <div className="mb-4">
+                                <label htmlFor="content" className="block text-gray-700 font-bold mb-2">Content:</label>
+                                <textarea
+                                    id="content"
+                                    name="content"
+                                    value={selectedRequest.content}
+                                    onChange={handleChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    required
+                                ></textarea>
+                            </div>
+                            <div className="mb-4">
+                                <label htmlFor="userName" className="block text-gray-700 font-bold mb-2">User Name:</label>
+                                <input
+                                    type="text"
+                                    id="userName"
+                                    name="userName"
+                                    value={selectedRequest.userName}
+                                    onChange={handleChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    required
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label htmlFor="picUrl" className="block text-gray-700 font-bold mb-2">Picture URL:</label>
+                                <input
+                                    type="text"
+                                    id="picUrl"
+                                    name="picUrl"
+                                    value={selectedRequest.picUrl || ''}
+                                    onChange={handleChange}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                />
+                            </div>
+                            <div className="flex justify-end">
+                                <button type="button" className="bg-gray-500 text-white px-4 py-2 rounded mr-2" onClick={() => setIsDialogOpen(false)}>Cancel</button>
+                                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
-
-            <div className="flex justify-center mt-4">
-                <button
-                    onClick={prevPage}
-                    className={`page-link mx-2 px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === 1 ? 'cursor-not-allowed text-gray-500' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
-                    disabled={currentPage === 1}
-                >
-                    Previous
-                </button>
-                <button
-                    onClick={() => paginate(currentPage)}
-                    className={`page-link px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === 1 ? 'bg-teal-500 text-white' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
-                >
-                    {currentPage}
-                </button>
-                <button
-                    onClick={nextPage}
-                    className={`page-link mx-2 px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === Math.ceil(prayerRequests.length / postsPerPage) ? 'cursor-not-allowed text-gray-500' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
-                    disabled={currentPage === Math.ceil(prayerRequests.length / postsPerPage)}
-                >
-                    Next
-                </button>
-            </div>
         </div>
     );
 }

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseconfig/firebase';
 import { useNavigate } from 'react-router-dom';
+import { Timestamp } from 'firebase/firestore';
+
 
 export default function AlterUploads() {
     const [videos, setVideos] = useState([]);
@@ -10,46 +12,99 @@ export default function AlterUploads() {
     const [editingVideo, setEditingVideo] = useState(null);
     const [formValues, setFormValues] = useState({ title: '', sermonBy: '', videoUrl: '', content: '', date: '' });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchVideos = async () => {
-            const querySnapshot = await getDocs(collection(db, 'facebook-video'));
-            const videoList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setVideos(videoList);
+            try {
+                const q = query(collection(db, 'facebook-video'), orderBy('date', 'desc'));
+                const querySnapshot = await getDocs(q);
+                const videoList = querySnapshot.docs.map(doc => {
+                    const videoData = doc.data();
+                    const date = videoData.date ? new Date(videoData.date.seconds * 1000) : null;
+                    return {
+                        id: doc.id,
+                        ...videoData,
+                        date: date ? `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}` : null
+                    };
+                });
+                setVideos(videoList);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error fetching videos:', err);
+                setError('Failed to load videos.');
+                setLoading(false);
+            }
         };
 
         fetchVideos();
     }, []);
 
     const handleEdit = (video) => {
-        setEditingVideo(video.id);
-        setFormValues({ ...video, date: new Date(video.date).toISOString().split('T')[0] });
-        setIsModalOpen(true);
+        try {
+            setEditingVideo(video.id);
+
+            let dateISO = '';
+            if (video.date) {
+                const date = new Date(video.date.seconds * 1000); // Convert Firestore Timestamp to JavaScript Date
+                if (!isNaN(date)) {
+                    // Format date as needed (e.g., YYYY-MM-DD for input[type="date"])
+                    dateISO = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                }
+            }
+
+            setFormValues({
+                title: video.title || '',
+                sermonBy: video.sermonBy || '',
+                videoUrl: video.videoUrl || '',
+                content: video.content || '',
+                date: dateISO
+            });
+
+            setIsModalOpen(true);
+        } catch (err) {
+            console.error('Error in handleEdit:', err);
+        }
     };
 
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const [year, month, day] = formValues.date.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+
+            await updateDoc(doc(db, 'facebook-video', editingVideo), {
+                ...formValues,
+                date: Timestamp.fromDate(date) // Convert Date object to Firestore Timestamp
+            });
+
+            setEditingVideo(null);
+            setIsModalOpen(false);
+            // Update videos state to reflect the edited video
+            setVideos(videos.map(video => (video.id === editingVideo ? { ...video, ...formValues, date: date.toISOString() } : video)));
+            navigate('/facebook-live');
+        } catch (err) {
+            console.error('Error updating video:', err);
+        }
+    };
+
+
     const handleDelete = async (videoId) => {
-        await deleteDoc(doc(db, 'facebook-video', videoId));
-        setVideos(videos.filter(video => video.id !== videoId));
+        try {
+            await deleteDoc(doc(db, 'facebook-video', videoId));
+            setVideos(videos.filter(video => video.id !== videoId));
+        } catch (err) {
+            console.error('Error deleting video:', err);
+        }
     };
 
     const handleChange = (e) => {
         setFormValues({ ...formValues, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        await updateDoc(doc(db, 'facebook-video', editingVideo), {
-            ...formValues,
-            date: new Date(formValues.date).toISOString()
-        });
-        setEditingVideo(null);
-        setIsModalOpen(false);
-        setVideos(videos.map(video => (video.id === editingVideo ? { id: video.id, ...formValues } : video)));
-        navigate('/facebook-live');
-    };
-
-    // Pagination logic
     const indexOfLastVideo = currentPage * videosPerPage;
     const indexOfFirstVideo = indexOfLastVideo - videosPerPage;
     const currentVideos = videos.slice(indexOfFirstVideo, indexOfLastVideo);
@@ -57,6 +112,14 @@ export default function AlterUploads() {
     const paginate = pageNumber => setCurrentPage(pageNumber);
     const nextPage = () => setCurrentPage(prevPage => Math.min(prevPage + 1, Math.ceil(videos.length / videosPerPage)));
     const prevPage = () => setCurrentPage(prevPage => Math.max(prevPage - 1, 1));
+
+    if (loading) {
+        return <p>Loading...</p>;
+    }
+
+    if (error) {
+        return <p>{error}</p>;
+    }
 
     return (
         <div className="flex flex-col items-center min-h-screen bg-gradient-to-r from-black to-white p-4">
@@ -67,7 +130,7 @@ export default function AlterUploads() {
                         <h2 className="text-xl font-bold">{video.title}</h2>
                         <p className="text-gray-700">Sermon By: {video.sermonBy}</p>
                         <p className="text-gray-700">Content: {video.content}</p>
-                        <p className="text-gray-700">Date: {new Date(video.date).toLocaleDateString()}</p>
+                        <p className="text-gray-700">Date: {video.date}</p>
                         <button
                             className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-300 mr-2"
                             onClick={() => handleEdit(video)}
@@ -174,34 +237,47 @@ export default function AlterUploads() {
     );
 }
 
-const Pagination = ({ videosPerPage, totalVideos, currentPage, nextPage, prevPage }) => {
+const Pagination = ({ videosPerPage, totalVideos, paginate, currentPage, nextPage, prevPage }) => {
+    const pageNumbers = [];
+
+    for (let i = 1; i <= Math.ceil(totalVideos / videosPerPage); i++) {
+        pageNumbers.push(i);
+    }
+
     return (
-        <nav>
-            <ul className="flex justify-center mt-4">
-                <li>
-                    <button
-                        onClick={prevPage}
-                        className={`page-link mx-2 px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === 1 ? 'cursor-not-allowed text-gray-500' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
-                        disabled={currentPage === 1}
-                    >
-                        Previous
-                    </button>
-                </li>
-                <li className="mx-2">
-                    <span className="page-link px-4 py-2 rounded shadow-md border border-teal-500 bg-teal-500 text-white">
-                        {currentPage}
-                    </span>
-                </li>
-                <li>
-                    <button
-                        onClick={nextPage}
-                        className={`page-link mx-2 px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === Math.ceil(totalVideos / videosPerPage) ? 'cursor-not-allowed text-gray-500' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
-                        disabled={currentPage === Math.ceil(totalVideos / videosPerPage)}
-                    >
-                        Next
-                    </button>
-                </li>
-            </ul>
-        </nav>
+        <div className="flex justify-center mt-4">
+            <nav>
+                <ul className="pagination">
+                    <li className="page-item">
+                        <button
+                            className={`px-3 py-1 bg-gray-300 rounded-l-md ${currentPage === 1 ? 'pointer-events-none' : 'hover:bg-gray-400'}`}
+                            onClick={() => prevPage()}
+                            disabled={currentPage === 1}
+                        >
+                            Prev
+                        </button>
+                    </li>
+                    {pageNumbers.map(number => (
+                        <li key={number} className="page-item">
+                            <button
+                                onClick={() => paginate(number)}
+                                className={`px-3 py-1 bg-gray-300 ${currentPage === number ? 'bg-blue-500 text-white font-semibold' : 'hover:bg-gray-400'}`}
+                            >
+                                {number}
+                            </button>
+                        </li>
+                    ))}
+                    <li className="page-item">
+                        <button
+                            className={`px-3 py-1 bg-gray-300 rounded-r-md ${currentPage === Math.ceil(totalVideos / videosPerPage) ? 'pointer-events-none' : 'hover:bg-gray-400'}`}
+                            onClick={() => nextPage()}
+                            disabled={currentPage === Math.ceil(totalVideos / videosPerPage)}
+                        >
+                            Next
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
     );
 };

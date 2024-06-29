@@ -15,7 +15,7 @@ export default function Navbar() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        clickSoundRef.current = new Audio("/long-whoosh.mp3");
+        clickSoundRef.current = new Audio("/click.mp3");
 
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
@@ -215,6 +215,17 @@ export default function Navbar() {
                         </li>
                     </>
                 )}
+                {/* Adding Facebook and YouTube icons */}
+                <li className="ml-4">
+                    <a href="https://www.facebook.com/Riversidechurchwestville1" target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:text-blue-500 text-2xl">
+                        <i className="fab fa-facebook"></i>
+                    </a>
+                </li>
+                <li className="ml-4">
+                    <a href="https://www.youtube.com/channel/UCt9cUcS2QRvknkcwcFEVtWw" target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-400 text-2xl">
+                        <i className="fab fa-youtube"></i>
+                    </a>
+                </li>
             </ul>
         </nav>
     );

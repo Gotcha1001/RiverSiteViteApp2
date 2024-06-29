@@ -1,8 +1,14 @@
-export default function ContactUs() {
+import React from 'react';
+import Contact from './Contact'; // Assuming 'Contact.jsx' is in the same directory
+
+const ContactUs = () => {
     return (
         <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-black to-gray-900 text-white">
             <div className="container mx-auto py-8 p-3">
                 <h1 className="text-3xl font-bold text-center mb-8 zoom">Contact Page</h1>
+
+                {/* Render the Contact component */}
+                <Contact />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* Pastor Cedric Olivier */}
@@ -13,7 +19,7 @@ export default function ContactUs() {
                     </div>
 
                     {/* Riverside Church */}
-                    <div className="bg-teal-800 p-4 rounded-lg text-center hover:shadow-xl transform hover:scale-105">
+                    <div className="bg-teal-500 p-4 rounded-lg text-center hover:shadow-xl transform hover:scale-105">
                         <p className="font-bold">Riverside Church</p>
                         <p>Email: info@riversidechurch.org.za</p>
                     </div>
@@ -57,3 +63,5 @@ export default function ContactUs() {
         </div>
     );
 }
+
+export default ContactUs;

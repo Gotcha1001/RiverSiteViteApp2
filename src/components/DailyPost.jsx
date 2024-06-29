@@ -1,22 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebaseconfig/firebase';
+import { db, Timestamp, } from '../firebaseconfig/firebase'; // Import doc and updateDoc
 import { collection, query, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom'; // Use useNavigate for navigation
+import { useNavigate } from 'react-router-dom';
 
 export default function DailyPost() {
     const [posts, setPosts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [postsPerPage] = useState(5); // Number of posts per page
+    const [postsPerPage] = useState(5);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const navigate = useNavigate(); // Initialize the useNavigate hook for navigation
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchPosts = async () => {
             try {
                 const q = query(collection(db, 'daily-posts'));
                 const querySnapshot = await getDocs(q);
-                const postsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+                let postsData = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    date: new Date(doc.data().date.seconds * 1000)
+                }));
+
+                postsData.sort((a, b) => b.date - a.date);
+
                 setPosts(postsData);
                 console.log('Posts fetched successfully:', postsData);
             } catch (err) {
@@ -33,13 +40,16 @@ export default function DailyPost() {
     const handleLike = async (postId, currentLikes) => {
         try {
             const postRef = doc(db, 'daily-posts', postId);
+            // Ensure currentLikes is parsed as a number
+            const newLikes = Number(currentLikes) + 1;
+
             await updateDoc(postRef, {
-                likes: currentLikes + 1
+                likes: newLikes
             });
 
             setPosts(prevPosts =>
                 prevPosts.map(post =>
-                    post.id === postId ? { ...post, likes: currentLikes + 1 } : post
+                    post.id === postId ? { ...post, likes: newLikes } : post
                 )
             );
         } catch (err) {
@@ -47,12 +57,12 @@ export default function DailyPost() {
         }
     };
 
-    // Get current posts
+
+
     const indexOfLastPost = currentPage * postsPerPage;
     const indexOfFirstPost = indexOfLastPost - postsPerPage;
     const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
 
-    // Change page
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
     const nextPage = () => setCurrentPage((prevPage) => Math.min(prevPage + 1, Math.ceil(posts.length / postsPerPage)));
     const prevPage = () => setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
@@ -73,18 +83,20 @@ export default function DailyPost() {
                     currentPosts.map((post, index) => (
                         <div
                             key={index}
-                            className="daily-post-item mb-4 p-6 bg-white rounded-lg shadow-lg transition transform hover:scale-105"
+                            className="daily-post-item mb-4 p-6 bg-slate-950 rounded-lg shadow-lg transition transform hover:scale-105"
                         >
-                            <p className="text-2xl font-bold mb-2">Date Posted: {new Date(post.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                            <p className="text-2xl font-bold mb-2 text-white">
+                                Date Posted: {post.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
                             {post.imgUrl && (
                                 <div className="w-full h-96 mb-4 rounded overflow-hidden flex justify-center items-center">
                                     <img src={post.imgUrl} alt="Post Image" className="w-full h-full object-cover transition transform hover:wobble" />
                                 </div>
                             )}
-                            <p className="text-gray-700 mb-4">Content: {post.content}</p>
-                            <p className="text-gray-500 text-sm mb-2">Posted by: {post.postedBy}</p>
+                            <p className="text-gray-200 mb-4">Content: {post.content}</p>
+                            <p className="text-gray-200 text-sm mb-2">Posted by: {post.postedBy}</p>
                             <div className="flex items-center">
-                                <p className="text-gray-500 text-sm mr-2">Likes: {post.likes}</p>
+                                <p className="text-gray-200 text-sm mr-2">Likes: {post.likes}</p>
                                 <button
                                     onClick={() => handleLike(post.id, post.likes)}
                                     className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-700 transition"
