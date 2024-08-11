@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { db, Timestamp, } from '../firebaseconfig/firebase'; // Import doc and updateDoc
+import { db, storage } from '../firebaseconfig/firebase'; // Import storage
 import { collection, query, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
+import Spinner from './Spinner';
 
 export default function DailyPost() {
     const [posts, setPosts] = useState([]);
@@ -21,6 +23,14 @@ export default function DailyPost() {
                     ...doc.data(),
                     date: new Date(doc.data().date.seconds * 1000)
                 }));
+
+                // Fetch images from Firebase Storage
+                for (let post of postsData) {
+                    if (post.imgPath) {
+                        const imgRef = ref(storage, post.imgPath);
+                        post.imgUrl = await getDownloadURL(imgRef);
+                    }
+                }
 
                 postsData.sort((a, b) => b.date - a.date);
 
@@ -57,8 +67,6 @@ export default function DailyPost() {
         }
     };
 
-
-
     const indexOfLastPost = currentPage * postsPerPage;
     const indexOfFirstPost = indexOfLastPost - postsPerPage;
     const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
@@ -67,8 +75,13 @@ export default function DailyPost() {
     const nextPage = () => setCurrentPage((prevPage) => Math.min(prevPage + 1, Math.ceil(posts.length / postsPerPage)));
     const prevPage = () => setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
 
+    useEffect(() => {
+        console.log("Scrolling to top due to page change:", currentPage);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentPage]);
+
     if (loading) {
-        return <p>Loading...</p>;
+        return <Spinner />;
     }
 
     if (error) {
@@ -77,21 +90,22 @@ export default function DailyPost() {
 
     return (
         <div className="flex flex-col items-center min-h-screen bg-gradient-to-r from-black to-white p-4">
-            <h1 className="text-4xl font-bold text-white my-8 mt-16 zoom">Daily Quotes</h1>
+            <h1 className="text-4xl  text-white my-8 mt-16 font-extrabold font-serif zoom mb-3">Daily Posts</h1>
             <div className="daily-posts-list w-full max-w-2xl mt-1">
                 {currentPosts.length > 0 ? (
                     currentPosts.map((post, index) => (
                         <div
                             key={index}
-                            className="daily-post-item mb-4 p-6 bg-slate-950 rounded-lg shadow-lg transition transform hover:scale-105"
+                            className="daily-post-item mb-4 shadow-neon p-6 bg-slate-950 rounded-lg  transition transform hover:scale-105"
                         >
                             <p className="text-2xl font-bold mb-2 text-white">
                                 Date Posted: {post.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                             </p>
                             {post.imgUrl && (
                                 <div className="w-full h-96 mb-4 rounded overflow-hidden flex justify-center items-center">
-                                    <img src={post.imgUrl} alt="Post Image" className="w-full h-full object-cover transition transform hover:wobble" />
+                                    <img src={post.imgUrl} alt="Post Image" className="w-full h-full object-contain transition transform hover:wobble" />
                                 </div>
+
                             )}
                             <p className="text-gray-200 mb-4">Content: {post.content}</p>
                             <p className="text-gray-200 text-sm mb-2">Posted by: {post.postedBy}</p>

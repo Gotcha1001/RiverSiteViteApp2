@@ -253,9 +253,9 @@
   animation: zoom 2.5s ease infinite; /* Apply zoom animation on hover */
 }
 
-.daily-post-item img:hover {
-  animation: wobble 25s ease infinite; /* Apply wobble animation on image hover */
-}
+/* .daily-post-item img:hover {
+  animation: wobble 25s ease infinite;  Apply wobble animation on image hover 
+} */
 
 .object-contain {
   object-fit: contain;
@@ -269,9 +269,9 @@
   animation: zoom 1.5s ease infinite; /* Apply zoom animation on hover */
 }
 
-.prayer-request-item img:hover {
-  animation: wobble 25s ease infinite; /* Apply wobble animation on image hover */
-}
+/* .prayer-request-item img:hover {
+  animation: wobble 25s ease infinite;  Apply wobble animation on image hover 
+} */
 
 .object-contain {
   object-fit: contain;
@@ -330,4 +330,511 @@
   100% {
     background-position: 0% 50%;
   }
+}
+
+.footer {
+  background: linear-gradient(
+    90deg,
+    #000000,
+    #0d3978
+  ); /* Same gradient as navbar */
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.footer-links {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+
+.footer-links li {
+  margin-left: 20px;
+}
+
+.footer-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.3s;
+}
+
+.footer-links a:hover {
+  color: #06b6d4; /* Teal color for hover */
+}
+
+@media (max-width: 768px) {
+  .footer {
+    flex-direction: column;
+    padding: 10px; /* Adjust padding for smaller screens */
+  }
+
+  .footer-links {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .footer-links li {
+    margin: 5px 0; /* Add space between each link */
+  }
+
+  .footer-links a {
+    font-size: 1.2rem; /* Increase font size for better readability */
+  }
+}
+
+/* Resources.css */
+
+@keyframes rotate-y {
+  0% {
+    transform: perspective(1000px) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(1000px) rotateY(180deg);
+  }
+}
+
+img {
+  backface-visibility: hidden;
+}
+
+.rotate-pic:hover {
+  animation: rotate-y 2s forwards;
+}
+
+.perspective {
+  perspective: 1000px;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* div {
+  backface-visibility: hidden;
+} */
+
+.btn {
+  display: inline-block;
+  text-align: center;
+}
+
+.prayer-request-item {
+  width: 100%; /* Ensure all cards take full width of their container */
+  max-width: 600px; /* Set a maximum width to limit the size of the cards */
+  padding: 1rem; /* Add padding inside the cards for spacing */
+  margin-bottom: 1rem; /* Add margin at the bottom of each card for spacing */
+  border: 1px solid #e2e8f0; /* Add a subtle border around each card */
+  border-radius: 0.5rem; /* Apply border radius for rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a light shadow for depth */
+}
+
+.prayer-request-item img {
+  display: block;
+  margin: 0 auto; /* Center the image horizontally */
+  max-width: 100%; /* Ensure images take full width of their container */
+  height: auto; /* Maintain aspect ratio */
+  border-radius: 0.5rem; /* Apply border radius for rounded corners */
+}
+
+.form-container {
+  padding: 20px;
+  max-width: 2xl; /* Ensure this is defined in your tailwind.config.js or set it directly here */
+  margin: 0 auto; /* Center the form container */
+}
+
+.form-error {
+  color: red;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%; /* Ensure width is set to 100% */
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+}
+
+.form-submit,
+.form-cancel {
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+}
+
+.form-submit {
+  background-color: blue;
+  color: white;
+}
+
+.form-cancel {
+  background-color: red;
+  color: white;
+  margin-left: 10px;
+}
+
+.active-link {
+  background-color: teal;
+  color: white !important;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.navbar-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.3s;
+}
+
+.navbar-links a:hover {
+  color: #ffd700;
+}
+
+.logout-button {
+  background-color: red;
+  color: white;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.logout-button:hover {
+  background-color: darkred;
+}
+
+.active-footer-link {
+  background-color: teal;
+  color: white !important;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.footer-links a {
+  color: gray;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.3s;
+}
+
+.footer-links a:hover {
+  color: #ffd700;
+}
+
+.navbar-logo {
+  height: 16rem;
+  width: 18rem;
+  margin-left: 7px;
+}
+
+/* Styling for social icons in the navbar */
+.navbar-social-icon a {
+  font-size: 2rem; /* Adjust the size of the icons */
+
+  transition: color 0.3s ease; /* Smooth color transition on hover */
+}
+
+.navbar-social-icon a:hover {
+  color: #333; /* Change to desired hover color */
+}
+
+/* Specific styles for Facebook icon */
+.navbar-social-icon.facebook a {
+  color: #0053c7; /* Facebook blue color */
+}
+
+.navbar-social-icon.facebook a:hover {
+  color: #022572; /* Darker blue for hover */
+}
+
+/* Specific styles for YouTube icon */
+.navbar-social-icon.youtube a {
+  color: #f31f1f; /* YouTube red color */
+}
+
+.navbar-social-icon.youtube a:hover {
+  color: #770000; /* Darker red for hover */
+}
+
+@media (min-width: 700px) and (max-width: 1395px) {
+  /* Your styles here */
+  .navbar {
+    flex-direction: row; /* Adjust navbar direction for this range */
+    padding: 15px 20px; /* Adjust padding */
+  }
+
+  .navbar-title {
+    font-size: 1.5rem; /* Adjust font size */
+  }
+
+  .navbar-links {
+    flex-direction: row;
+    justify-content: space-between;
+    white-space: nowrap; /* Prevent wrapping of links */
+  }
+
+  .navbar-links li {
+    display: inline-block; /* Ensure links are inline */
+    margin-left: 15px; /* Adjust margin between links */
+    margin-top: 10px;
+  }
+
+  .navbar-links a {
+    font-size: 1rem; /* Adjust font size */
+    color: white; /* Ensure default text color is white */
+  }
+
+  .navbar-links a:hover {
+    color: #16928a; /* Lighter gray for hover */
+  }
+
+  .navbar-links a:active {
+    color: white; /* Reset active color to default */
+  }
+
+  .upload-link {
+    margin-top: 0; /* Remove margin top */
+  }
+
+  .navbar-toggle {
+    display: none; /* Hide toggle button */
+  }
+
+  .dropdown-menu {
+    display: block; /* Show dropdown menu */
+    position: absolute; /* Position dropdown menu */
+    top: 100%; /* Adjust position */
+    left: 0;
+    width: 200px; /* Adjust width */
+    background-color: #fff; /* Background color */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Add shadow */
+  }
+
+  .dropdown-link:hover {
+    background-color: #f1f1f1; /* Change background on hover */
+  }
+
+  /* Override active link styling within this media query */
+  .active-link {
+    background-color: teal; /* Neutralize background color */
+    color: inherit; /* Inherit text color */
+    padding: 0.1; /* Remove padding */
+    border-radius: 5; /* Remove border radius */
+  }
+}
+
+/* Media query for intermediate screens */
+@media (min-width: 768px) and (max-width: 1683px) {
+  .navbar {
+    flex-direction: row; /* Ensure navbar items are in a row */
+    flex-wrap: wrap; /* Allow wrapping to the next line */
+    justify-content: space-between; /* Adjust spacing */
+  }
+
+  .navbar-links {
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-wrap: wrap; /* Ensure links wrap to the next line if necessary */
+    white-space: nowrap; /* Prevent wrapping of individual links */
+  }
+
+  .navbar-links li {
+    margin-left: 40px; /* Adjust margin between links */
+  }
+
+  .navbar-links a {
+    font-size: 0.9rem; /* Adjust font size for better fit */
+  }
+
+  .upload-link {
+    margin-left: auto; /* Ensure upload link stays to the right */
+  }
+
+  .navbar-social-icon {
+    display: inline-block; /* Ensure social icons are visible and inline */
+    margin-top: 10px; /* Add space above social icons */
+  }
+
+  .logout-button {
+    background-color: red;
+    color: white;
+    padding: 2px 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .active-link {
+    background-color: teal;
+    color: white !important;
+    padding: 4px;
+    border-radius: 4px;
+  }
+}
+
+/* Media query for screens between 1338px and 1679px */
+@media (min-width: 1338px) and (max-width: 1679px) {
+  .navbar {
+    flex-direction: row; /* Ensure navbar items are in a row */
+    flex-wrap: wrap; /* Allow wrapping to the next line */
+    justify-content: space-between; /* Adjust spacing */
+  }
+
+  .navbar-links {
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-wrap: wrap; /* Ensure links wrap to the next line if necessary */
+    white-space: nowrap; /* Prevent wrapping of individual links */
+  }
+
+  .navbar-links li {
+    margin-left: 40px; /* Adjust margin between links */
+  }
+
+  .navbar-links a {
+    font-size: 0.9rem; /* Adjust font size for better fit */
+  }
+
+  .upload-link {
+    margin-left: auto; /* Ensure upload link stays to the right */
+  }
+
+  .navbar-social-icon {
+    display: inline-block; /* Ensure social icons are visible and inline */
+    margin-top: 10px; /* Add space above social icons */
+  }
+
+  .logout-button {
+    background-color: red;
+    color: white;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+  }
+
+  .active-link {
+    background-color: teal;
+    color: white !important;
+    padding: 6px;
+    border-radius: 4px;
+  }
+}
+
+@media (min-width: 635px) and (max-width: 1683px) {
+  .footer {
+    flex-direction: row; /* Ensure footer items are in a row */
+    flex-wrap: wrap; /* Allow wrapping to the next line */
+    justify-content: space-between; /* Adjust spacing */
+  }
+
+  .footer-links {
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-wrap: wrap; /* Ensure links wrap to the next line if necessary */
+    white-space: nowrap; /* Prevent wrapping of individual links */
+  }
+
+  .footer-links li {
+    margin-left: 15px; /* Adjust margin between links */
+  }
+
+  .footer-links a {
+    font-size: 0.9rem; /* Adjust font size for better fit */
+  }
+
+  .footer-upload-link {
+    margin-left: auto; /* Ensure upload link stays to the right */
+  }
+
+  .footer-social-icon {
+    display: inline-block; /* Ensure social icons are visible and inline */
+    margin-top: 10px; /* Add space above social icons */
+  }
+}
+
+@media (min-width: 645px) and (max-width: 1038px) {
+  .footer {
+    flex-direction: column; /* Stack items vertically */
+    align-items: center; /* Center items horizontally */
+    padding: 10px; /* Optional: Add padding for better spacing */
+  }
+
+  .footer-links {
+    flex-direction: column; /* Stack links vertically */
+    align-items: center; /* Center links horizontally */
+    margin-bottom: 10px; /* Add space between footer sections */
+  }
+
+  .footer-links li {
+    margin: 5px 0; /* Adjust margin between links */
+  }
+
+  .footer-links a {
+    font-size: 1rem; /* Adjust font size for better fit */
+  }
+
+  .footer-upload-link {
+    margin: 10px 0; /* Add space above and below the upload link */
+  }
+
+  .footer-social-icon {
+    display: block; /* Ensure social icons stack vertically */
+    margin: 10px 0; /* Add space above and below social icons */
+  }
+}
+
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 5px;
+  position: relative;
+  cursor: pointer;
+  border: 2px solid #ccc; /* Add a border for visibility */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-checkbox:checked::before {
+  content: "✔";
+  position: absolute;
+  font-size: 16px; /* Slightly smaller font size for better fit */
+  color: green;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1.1); /* Center and slightly scale the checkmark */
+}
+
+.custom-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 3px 3px rgba(0, 0, 0, 0.12);
 }

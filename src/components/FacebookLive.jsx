@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseconfig/firebase';
 import VideoEmbed from './VideoEmbed';
+import Spinner from './Spinner';
 
 const Pagination = ({ postsPerPage, totalPosts, currentPage, nextPage, prevPage }) => {
     return (
@@ -86,8 +87,14 @@ const FacebookLive = () => {
     const nextPage = () => setCurrentPage((prevPage) => Math.min(prevPage + 1, Math.ceil(videos.length / videosPerPage)));
     const prevPage = () => setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
 
+    useEffect(() => {
+        console.log("Scrolling to top due to page change:", currentPage);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentPage]);
+
+
     if (loading) {
-        return <p>Loading...</p>;
+        return <Spinner />;
     }
 
     if (error) {
@@ -96,11 +103,11 @@ const FacebookLive = () => {
 
     return (
         <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-r from-black to-white p-4">
-            <h1 className="text-4xl font-bold text-white mb-8">Facebook Recorded Services</h1>
+            <h1 className="text-4xl font-bold text-white bg-black mb-10 text-center p-3  rounded-lg ">Shared Videos</h1>
             {currentVideos.map((video) => (
                 <div
                     key={video.id}
-                    className="card-content mb-8 bg-slate-950 p-4 rounded-lg mx-auto w-full lg:w-2/3"
+                    className="card-content mb-8 bg-slate-950 p-4 rounded-lg mx-auto w-full lg:w-2/3 shadow-neon"
                 >
                     <h2 className="text-2xl font-bold text-white">{video.title}</h2>
                     <p className="text-lg text-gray-300 mb-1">Sermon By: {video.sermonBy}</p>

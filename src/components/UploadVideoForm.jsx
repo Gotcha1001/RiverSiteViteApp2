@@ -81,6 +81,11 @@ const UploadVideoForm = ({ onVideoUploaded }) => {
         });
     };
 
+    const handleCancel = () => {
+        // Implement cancellation logic here, if needed
+        navigate('/facebook-live'); // Redirect to facebook-live page on cancel
+    };
+
     return (
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg mx-auto">
             <h2 className="text-2xl font-bold mb-4">Upload Video</h2>
@@ -124,13 +129,22 @@ const UploadVideoForm = ({ onVideoUploaded }) => {
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-40 resize-none whitespace-pre-wrap"
                 ></textarea>
             </div>
-            <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
-            >
-                {loading ? 'Uploading...' : 'Upload'}
-            </button>
+            <div className="flex justify-between">
+                <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-300"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
+                >
+                    {loading ? 'Uploading...' : 'Upload'}
+                </button>
+            </div>
         </form>
     );
 };

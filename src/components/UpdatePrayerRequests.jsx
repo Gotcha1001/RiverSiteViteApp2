@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { db, Timestamp } from '../firebaseconfig/firebase';
 import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getStorage, ref, deleteObject } from 'firebase/storage'; // Import Firebase Storage functions
+import Pagination from './Pagination'; // Import Pagination component
+import Spinner from './Spinner';
 
 export default function UpdatePrayerRequest() {
     const [prayerRequests, setPrayerRequests] = useState([]);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [requestsPerPage] = useState(5);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchPrayerRequests = async () => {
@@ -24,6 +30,8 @@ export default function UpdatePrayerRequest() {
                 setPrayerRequests(requestsData);
             } catch (err) {
                 console.error('Error fetching prayer requests:', err);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -39,8 +47,16 @@ export default function UpdatePrayerRequest() {
         setIsDialogOpen(true);
     };
 
-    const handleDeleteClick = async (requestId) => {
+    const handleDeleteClick = async (requestId, picUrl) => {
         try {
+            // Delete image from Firebase Storage if picUrl exists
+            if (picUrl) {
+                const storage = getStorage();
+                const imageRef = ref(storage, picUrl);
+                await deleteObject(imageRef);
+            }
+
+            // Delete document from Firestore
             await deleteDoc(doc(db, 'prayer-requests', requestId));
             setPrayerRequests(prayerRequests.filter(request => request.id !== requestId));
         } catch (err) {
@@ -87,27 +103,51 @@ export default function UpdatePrayerRequest() {
         }));
     };
 
+    // Logic to get current requests for the current page
+    const indexOfLastRequest = currentPage * requestsPerPage;
+    const indexOfFirstRequest = indexOfLastRequest - requestsPerPage;
+    const currentRequests = prayerRequests.slice(indexOfFirstRequest, indexOfLastRequest);
+
+    // Change page
+    const paginate = pageNumber => setCurrentPage(pageNumber);
+    const nextPage = () => setCurrentPage(prevPage => Math.min(prevPage + 1, Math.ceil(prayerRequests.length / requestsPerPage)));
+    const prevPage = () => setCurrentPage(prevPage => Math.max(prevPage - 1, 1));
+
+    if (loading) {
+        return <Spinner />;
+    }
+
     return (
-        <div className="flex flex-col items-center">
-            <h1 className="text-4xl font-bold my-8">Edit Prayer Request</h1>
-            {prayerRequests.map(request => (
-                <div key={request.id} className="p-4 border mb-4 rounded">
-                    <h2 className="text-xl font-bold mb-2">{request.title}</h2>
-                    <p className="mb-2"><strong>Content:</strong> {request.content}</p>
-                    <p className="mb-2">
-                        <strong>Date:</strong> {request.date.toLocaleDateString('en-GB')}
-                    </p>
-                    <p className="mb-2"><strong>User Name:</strong> {request.userName}</p>
-                    {request.picUrl && <img src={request.picUrl} alt="Prayer Request" className="mb-2 rounded-lg max-w-full h-auto" />}
-                    <div className="flex">
-                        <button className="bg-blue-500 text-white px-4 py-2 rounded mr-2" onClick={() => handleUpdateClick(request)}>Edit</button>
-                        <button className="bg-red-500 text-white px-4 py-2 rounded mr-2" onClick={() => handleDeleteClick(request.id)}>Delete</button>
-                        {!request.isApproved && (
-                            <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={() => handleApprove(request.id)}>Approve</button>
-                        )}
+        <div className="flex flex-col items-center ">
+            <h1 className="text-4xl font-bold my-8 zoom">Edit Prayer Request</h1>
+            <div className="prayer-requests-list w-full max-w-2xl mt-8 flex flex-col items-center ">
+                {currentRequests.map(request => (
+                    <div key={request.id} className="p-4 border mb-4 rounded gradient-background">
+                        <h2 className="text-xl font-bold mb-2">{request.title}</h2>
+                        <p className="mb-2"><strong>Content:</strong> {request.content}</p>
+                        <p className="mb-2">
+                            <strong>Date:</strong> {request.date.toLocaleDateString('en-GB')}
+                        </p>
+                        <p className="mb-2"><strong>User Name:</strong> {request.userName}</p>
+                        {request.picUrl && <img src={request.picUrl} alt="Prayer Request" className="mb-2 rounded-lg max-w-full h-auto" />}
+                        <div className="flex">
+                            <button className="bg-blue-500 text-white px-4 py-2 rounded mr-2" onClick={() => handleUpdateClick(request)}>Edit</button>
+                            <button className="bg-red-500 text-white px-4 py-2 rounded mr-2" onClick={() => handleDeleteClick(request.id, request.picUrl)}>Delete</button>
+                            {!request.isApproved && (
+                                <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={() => handleApprove(request.id)}>Approve</button>
+                            )}
+                        </div>
                     </div>
-                </div>
-            ))}
+                ))}
+                <Pagination
+                    requestsPerPage={requestsPerPage}
+                    totalRequests={prayerRequests.length}
+                    paginate={paginate}
+                    currentPage={currentPage}
+                    nextPage={nextPage}
+                    prevPage={prevPage}
+                />
+            </div>
             {isDialogOpen && selectedRequest && (
                 <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
                     <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">

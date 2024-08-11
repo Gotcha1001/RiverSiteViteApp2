@@ -3,7 +3,8 @@ import { collection, query, orderBy, getDocs, deleteDoc, doc, updateDoc } from '
 import { db } from '../firebaseconfig/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Timestamp } from 'firebase/firestore';
-
+import Pagination from './Pagination'; // Import Pagination component
+import Spinner from './Spinner';
 
 export default function AlterUploads() {
     const [videos, setVideos] = useState([]);
@@ -69,7 +70,6 @@ export default function AlterUploads() {
         }
     };
 
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -91,7 +91,6 @@ export default function AlterUploads() {
         }
     };
 
-
     const handleDelete = async (videoId) => {
         try {
             await deleteDoc(doc(db, 'facebook-video', videoId));
@@ -105,6 +104,7 @@ export default function AlterUploads() {
         setFormValues({ ...formValues, [e.target.name]: e.target.value });
     };
 
+    // Pagination logic
     const indexOfLastVideo = currentPage * videosPerPage;
     const indexOfFirstVideo = indexOfLastVideo - videosPerPage;
     const currentVideos = videos.slice(indexOfFirstVideo, indexOfLastVideo);
@@ -114,7 +114,7 @@ export default function AlterUploads() {
     const prevPage = () => setCurrentPage(prevPage => Math.max(prevPage - 1, 1));
 
     if (loading) {
-        return <p>Loading...</p>;
+        return <Spinner />;
     }
 
     if (error) {
@@ -226,7 +226,7 @@ export default function AlterUploads() {
                                     type="submit"
                                     className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
                                 >
-                                    Save
+                                    Update Video
                                 </button>
                             </div>
                         </form>
@@ -236,48 +236,3 @@ export default function AlterUploads() {
         </div>
     );
 }
-
-const Pagination = ({ videosPerPage, totalVideos, paginate, currentPage, nextPage, prevPage }) => {
-    const pageNumbers = [];
-
-    for (let i = 1; i <= Math.ceil(totalVideos / videosPerPage); i++) {
-        pageNumbers.push(i);
-    }
-
-    return (
-        <div className="flex justify-center mt-4">
-            <nav>
-                <ul className="pagination">
-                    <li className="page-item">
-                        <button
-                            className={`px-3 py-1 bg-gray-300 rounded-l-md ${currentPage === 1 ? 'pointer-events-none' : 'hover:bg-gray-400'}`}
-                            onClick={() => prevPage()}
-                            disabled={currentPage === 1}
-                        >
-                            Prev
-                        </button>
-                    </li>
-                    {pageNumbers.map(number => (
-                        <li key={number} className="page-item">
-                            <button
-                                onClick={() => paginate(number)}
-                                className={`px-3 py-1 bg-gray-300 ${currentPage === number ? 'bg-blue-500 text-white font-semibold' : 'hover:bg-gray-400'}`}
-                            >
-                                {number}
-                            </button>
-                        </li>
-                    ))}
-                    <li className="page-item">
-                        <button
-                            className={`px-3 py-1 bg-gray-300 rounded-r-md ${currentPage === Math.ceil(totalVideos / videosPerPage) ? 'pointer-events-none' : 'hover:bg-gray-400'}`}
-                            onClick={() => nextPage()}
-                            disabled={currentPage === Math.ceil(totalVideos / videosPerPage)}
-                        >
-                            Next
-                        </button>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    );
-};

@@ -1,40 +1,68 @@
 import React, { useState } from 'react';
-import { db, Timestamp } from '../firebaseconfig/firebase'; // Import Timestamp from firebase config
+import { db, Timestamp } from '../firebaseconfig/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
 
 export default function AddPost() {
-    const [date, setDate] = useState(''); // State to hold selected date
-    const [imgUrl, setImgUrl] = useState('');
+    const [date, setDate] = useState('');
+    const [file, setFile] = useState(null);
     const [postedBy, setPostedBy] = useState('');
     const [content, setContent] = useState('');
     const [likes, setLikes] = useState(0);
     const [message, setMessage] = useState('');
+    const [uploadProgress, setUploadProgress] = useState(0);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
+            if (!file) {
+                setMessage('Please select an image to upload.');
+                return;
+            }
+
             // Convert the selected date string to a JavaScript Date object
             const selectedDate = new Date(date);
             // Convert the Date object to a Firestore Timestamp
             const dateTimestamp = Timestamp.fromDate(selectedDate);
 
-            await addDoc(collection(db, 'daily-posts'), {
-                date: dateTimestamp,
-                imgUrl,
-                postedBy,
-                content,
-                likes,
-            });
-            setMessage('Post added successfully!');
-            setDate('');
-            setImgUrl('');
-            setPostedBy('');
-            setContent('');
-            setLikes(0);
-            navigate('/daily-posts');
+            // Upload file to Firebase Storage
+            const storage = getStorage();
+            const storageRef = ref(storage, `images/${file.name}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                },
+                (error) => {
+                    console.error('Upload failed', error);
+                    setMessage('Failed to upload image.');
+                },
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+                    await addDoc(collection(db, 'daily-posts'), {
+                        date: dateTimestamp,
+                        imgUrl: downloadURL,
+                        postedBy,
+                        content,
+                        likes,
+                    });
+
+                    setMessage('Post added successfully!');
+                    setDate('');
+                    setFile(null);
+                    setPostedBy('');
+                    setContent('');
+                    setLikes(0);
+                    setUploadProgress(0);
+                    navigate('/daily-posts');
+                }
+            );
         } catch (error) {
             console.error('Error adding document: ', error);
             setMessage('Failed to add post.');
@@ -42,7 +70,7 @@ export default function AddPost() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg mx-auto">
+        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg mx-auto gradient-background m-4">
             <h2 className="text-2xl font-bold mb-4">Add New Daily Post</h2>
             {message && <p className={`mb-4 ${message.includes('successfully') ? 'text-green-500' : 'text-red-500'}`}>{message}</p>}
             <div className="mb-4">
@@ -56,15 +84,14 @@ export default function AddPost() {
                 />
             </div>
             <div className="mb-4">
-                <label className="block text-gray-700 font-semibold mb-2">Image URL:</label>
+                <label className="block text-gray-700 font-semibold mb-2">Image:</label>
                 <input
-                    type="text"
-                    value={imgUrl}
-                    onChange={(e) => setImgUrl(e.target.value)}
-                    placeholder="Image URL"
+                    type="file"
+                    onChange={(e) => setFile(e.target.files[0])}
                     required
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {uploadProgress > 0 && <progress value={uploadProgress} max="100" className="w-full mt-2" />}
             </div>
             <div className="mb-4">
                 <label className="block text-gray-700 font-semibold mb-2">Posted By:</label>

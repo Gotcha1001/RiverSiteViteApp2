@@ -1,33 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Use useNavigate instead of useHistory for Vite
-import { auth, createUserWithEmailAndPassword } from '../firebaseconfig/firebase';
-import { updateProfile, sendEmailVerification } from 'firebase/auth';
-import { FiEye, FiEyeOff } from 'react-icons/fi'; // Import eye icons
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+    auth,
+    createUserWithEmailAndPassword,
+    updateProfile,
+    sendEmailVerification,
+    signOut,
+} from "../firebaseconfig/firebase";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+
 
 export default function Register() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [name, setName] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
-    const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State to toggle confirm password visibility
-    const navigate = useNavigate(); // Use useNavigate instead of useHistory for Vite
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [gender, setGender] = useState("");
+    const [dateOfBirth, setDateOfBirth] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false); // New state for checkbox
+    const navigate = useNavigate();
 
     const handleRegister = async (event) => {
         event.preventDefault();
-        if (!email || !password || !name || !confirmPassword) {
-            alert('Please enter all fields');
+
+        if (!firstName || !lastName || !gender || !dateOfBirth || !email || !password || !confirmPassword) {
+            alert("Please enter all fields");
             return;
         }
 
         if (!/\S+@\S+\.\S+/.test(email)) {
-            alert('Please enter a valid email address');
+            alert("Please enter a valid email address");
             return;
         }
 
         if (password !== confirmPassword) {
-            alert('Passwords do not match');
+            alert("Passwords do not match");
+            return;
+        }
+
+        if (!termsAccepted) { // Check if terms are accepted
+            alert("Please accept the terms and conditions");
             return;
         }
 
@@ -36,34 +52,36 @@ export default function Register() {
             const user = userCredential.user;
 
             await updateProfile(user, {
-                displayName: name,
+                displayName: `${firstName} ${lastName}`,
             });
 
-            await sendEmailVerification(user); // Send email verification
+            await sendEmailVerification(user);
 
-            setEmail(''); // Clear email field
-            setPassword(''); // Clear password field
-            setConfirmPassword(''); // Clear confirm password field
-            setName(''); // Clear name field
-            setErrorMessage(''); // Clear error message
+            setFirstName("");
+            setLastName("");
+            setGender("");
+            setDateOfBirth("");
+            setEmail("");
+            setPassword("");
+            setConfirmPassword("");
+            setTermsAccepted(false); // Reset checkbox state
+            setErrorMessage("");
 
-            alert('Registered successfully');
-            navigate('/'); // Redirect to home page after successful registration
+            alert("Registered successfully. Please verify your email.");
+
+            // Sign out the user after registration
+            await signOut(auth);
+
+            // Redirect to login page after registration
+            navigate("/login");
         } catch (error) {
-            if (error.code === 'auth/email-already-in-use') {
-                alert('Email is already registered');
+            if (error.code === "auth/email-already-in-use") {
+                alert("Email is already registered");
             } else {
-                setErrorMessage('Error registering user: ' + error.message);
+                setErrorMessage("Error registering user: " + error.message);
             }
         }
     };
-
-    useEffect(() => {
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-        setName('');
-    }, []);
 
     const toggleShowPassword = () => {
         setShowPassword(!showPassword);
@@ -73,85 +91,165 @@ export default function Register() {
         setShowConfirmPassword(!showConfirmPassword);
     };
 
+    const handleCheckboxChange = (e) => {
+        setTermsAccepted(e.target.checked);
+    };
+
     return (
-        <div className="flex justify-center items-center h-screen bg-gradient-to-r from-black via-teal-500 to-purple-900">
-            <div className="register-form p-8 rounded-lg shadow-lg text-center max-w-md w-full bg-black">
+        <div className="flex h-screen items-center justify-center bg-gradient-to-r from-black via-teal-500 to-purple-900">
+            <div className="register-form w-full max-w-md rounded-lg bg-black p-8 text-center shadow-lg">
                 <h2 className="mb-6 text-2xl font-bold text-white">Register</h2>
                 {errorMessage && <p className="mb-4 text-sm text-red-500">{errorMessage}</p>}
                 <form onSubmit={handleRegister} autoComplete="off">
                     <div className="mb-4 text-left">
-                        <label htmlFor="name" className="block mb-2 text-sm font-medium text-white">Name</label>
+                        <label htmlFor="first-name" className="mb-2 block text-sm font-medium text-white">
+                            First Name
+                        </label>
                         <input
                             type="text"
-                            id="name"
-                            name="new-name" // Use a unique name attribute
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            id="first-name"
+                            name="first-name"
+                            className="w-full rounded-md border border-gray-300 p-2"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
                             required
-                            autoComplete="off" // Disable browser autocomplete
                         />
                     </div>
                     <div className="mb-4 text-left">
-                        <label htmlFor="email" className="block mb-2 text-sm font-medium text-white">Email</label>
+                        <label htmlFor="last-name" className="mb-2 block text-sm font-medium text-white">
+                            Last Name
+                        </label>
+                        <input
+                            type="text"
+                            id="last-name"
+                            name="last-name"
+                            className="w-full rounded-md border border-gray-300 p-2"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="mb-4 text-left">
+                        <label htmlFor="gender" className="mb-2 block text-sm font-medium text-white">
+                            Gender
+                        </label>
+                        <div className="flex items-center space-x-4">
+                            <label className="flex items-center text-white">
+                                <input
+                                    type="radio"
+                                    name="gender"
+                                    value="male"
+                                    className="mr-2"
+                                    checked={gender === "male"}
+                                    onChange={(e) => setGender(e.target.value)}
+                                    required
+                                />
+                                Male
+                            </label>
+                            <label className="flex items-center text-white">
+                                <input
+                                    type="radio"
+                                    name="gender"
+                                    value="female"
+                                    className="mr-2"
+                                    checked={gender === "female"}
+                                    onChange={(e) => setGender(e.target.value)}
+                                    required
+                                />
+                                Female
+                            </label>
+                        </div>
+                    </div>
+                    <div className="mb-4 text-left">
+                        <label htmlFor="date-of-birth" className="mb-2 block text-sm font-medium text-white">
+                            Date of Birth
+                        </label>
+                        <input
+                            type="date"
+                            id="date-of-birth"
+                            name="date-of-birth"
+                            className="w-full rounded-md border border-gray-300 p-2"
+                            value={dateOfBirth}
+                            onChange={(e) => setDateOfBirth(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="mb-4 text-left">
+                        <label htmlFor="email" className="mb-2 block text-sm font-medium text-white">
+                            Email
+                        </label>
                         <input
                             type="email"
                             id="email"
-                            name="new-email" // Use a unique name attribute
-                            className="w-full p-2 border border-gray-300 rounded-md"
+                            name="email"
+                            className="w-full rounded-md border border-gray-300 p-2"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            autoComplete="off" // Disable browser autocomplete
                         />
                     </div>
                     <div className="mb-4 text-left">
-                        <label htmlFor="password" className="block mb-2 text-sm font-medium text-white">Password</label>
+                        <label htmlFor="password" className="mb-2 block text-sm font-medium text-white">
+                            Password
+                        </label>
                         <div className="relative">
                             <input
-                                type={showPassword ? 'text' : 'password'}
+                                type={showPassword ? "text" : "password"}
                                 id="password"
-                                name="new-password" // Use a unique name attribute
-                                className="w-full p-2 border border-gray-300 rounded-md pr-10"
+                                name="password"
+                                className="w-full rounded-md border border-gray-300 p-2"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                autoComplete="off" // Disable browser autocomplete
                             />
-                            <button
-                                type="button"
-                                className="absolute top-2 right-2"
+                            <div
+                                className="absolute inset-y-0 right-0 flex items-center px-2"
                                 onClick={toggleShowPassword}
+                                style={{ cursor: "pointer" }}
                             >
                                 {showPassword ? <FiEyeOff /> : <FiEye />}
-                            </button>
+                            </div>
                         </div>
                     </div>
                     <div className="mb-4 text-left">
-                        <label htmlFor="confirm-password" className="block mb-2 text-sm font-medium text-white">Confirm Password</label>
+                        <label htmlFor="confirm-password" className="mb-2 block text-sm font-medium text-white">
+                            Confirm Password
+                        </label>
                         <div className="relative">
                             <input
-                                type={showConfirmPassword ? 'text' : 'password'}
+                                type={showConfirmPassword ? "text" : "password"}
                                 id="confirm-password"
-                                name="confirm-password" // Use a unique name attribute
-                                className="w-full p-2 border border-gray-300 rounded-md pr-10"
+                                name="confirm-password"
+                                className="w-full rounded-md border border-gray-300 p-2"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 required
-                                autoComplete="off" // Disable browser autocomplete
                             />
-                            <button
-                                type="button"
-                                className="absolute top-2 right-2"
+                            <div
+                                className="absolute inset-y-0 right-0 flex items-center px-2"
                                 onClick={toggleShowConfirmPassword}
+                                style={{ cursor: "pointer" }}
                             >
                                 {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-                            </button>
+                            </div>
                         </div>
+                    </div>
+                    <div className="mb-4 text-left flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            id="terms"
+                            className="custom-checkbox"
+                            checked={termsAccepted}
+                            onChange={handleCheckboxChange}
+                            required
+                        />
+                        <label htmlFor="terms" className="text-sm font-medium text-white">
+                            I accept the terms and conditions
+                        </label>
                     </div>
                     <button
                         type="submit"
-                        className="w-full py-2 px-4 bg-gray-800 text-white rounded-md cursor-pointer transition duration-300 ease-in-out hover:bg-gray-900"
+                        className="w-full rounded-md bg-gradient-to-r from-green-400 to-green-600 py-2 px-4 font-semibold text-white hover:from-green-500 hover:to-green-700"
                     >
                         Register
                     </button>

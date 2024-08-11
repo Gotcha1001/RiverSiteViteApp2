@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { db, Timestamp } from '../firebaseconfig/firebase';
+import { db, storage, Timestamp } from '../firebaseconfig/firebase';
 import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { ref, deleteObject } from 'firebase/storage';
+import Spinner from './Spinner'; // Import Spinner component
 
 export default function UpdateDailyPost() {
-
-    // Helper function to format date as "day, month year"
     const formatDate = (date) => {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         return date.toLocaleDateString('en-US', options);
@@ -12,9 +12,10 @@ export default function UpdateDailyPost() {
 
     const [posts, setPosts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [postsPerPage] = useState(5); // Number of posts per page
+    const [postsPerPage] = useState(5);
     const [selectedPost, setSelectedPost] = useState(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -24,11 +25,11 @@ export default function UpdateDailyPost() {
                 const postsData = querySnapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
-                    date: doc.data().date.toDate() // Convert Firestore Timestamp to Date
+                    date: doc.data().date.toDate()
                 }));
-                // Sort posts by date in descending order (latest first)
                 postsData.sort((a, b) => b.date - a.date);
                 setPosts(postsData);
+                setLoading(false);
             } catch (err) {
                 console.error('Error fetching posts:', err);
             }
@@ -42,14 +43,29 @@ export default function UpdateDailyPost() {
         setIsDialogOpen(true);
     };
 
-    const handleDeleteClick = async (postId) => {
+    const handleDeleteClick = async (post) => {
         try {
-            await deleteDoc(doc(db, 'daily-posts', postId));
-            setPosts(posts.filter(post => post.id !== postId));
+            if (post.imgUrl && post.imgUrl.startsWith('https://firebasestorage.googleapis.com/')) {
+                const imgRef = ref(storage, post.imgUrl);
+                // Check if the object exists before attempting to delete it
+                await deleteObject(imgRef).catch((error) => {
+                    if (error.code === 'storage/object-not-found') {
+                        console.warn('Image not found in Firebase Storage, skipping deletion.');
+                    } else {
+                        throw error; // rethrow other errors
+                    }
+                });
+            }
+
+            // Delete the Firestore document
+            await deleteDoc(doc(db, 'daily-posts', post.id));
+            setPosts(posts.filter(p => p.id !== post.id));
+
         } catch (err) {
             console.error('Error deleting post:', err);
         }
     };
+
 
     const handleUpdate = async (event) => {
         event.preventDefault();
@@ -57,14 +73,14 @@ export default function UpdateDailyPost() {
         try {
             const postRef = doc(db, 'daily-posts', id);
             await updateDoc(postRef, {
-                date: Timestamp.fromDate(new Date(date)), // Convert date to Timestamp
+                date: Timestamp.fromDate(new Date(date)),
                 content,
                 imgUrl,
                 likes,
                 postedBy
             });
             setIsDialogOpen(false);
-            window.location.reload(); // Refresh the page after update
+            window.location.reload();
         } catch (err) {
             console.error('Error updating post:', err);
         }
@@ -90,37 +106,41 @@ export default function UpdateDailyPost() {
         <div className="flex flex-col items-center min-h-screen bg-gradient-to-r from-black to-white p-4">
             <h1 className="text-4xl font-bold text-white my-8 mt-16">Update Daily Posts</h1>
             <div className="daily-posts-list w-full max-w-2xl mt-1">
-                {currentPosts.length > 0 ? (
-                    currentPosts.map((post, index) => (
-                        <div
-                            key={index}
-                            className="bg-gray-800 text-white rounded-lg shadow-lg p-6 mb-4"
-                        >
-                            <h2 className="text-2xl font-bold mb-4">{post.content}</h2>
-                            <p className="mb-4"><strong>Date:</strong> {formatDate(new Date(post.date))}</p>
-                            <p className="mb-4"><strong>Posted By:</strong> {post.postedBy}</p>
-                            {post.imgUrl && (
-                                <div className="mb-4 flex justify-center">
-                                    <img src={post.imgUrl} alt="Post" className="w-full h-auto rounded-lg" />
-                                </div>
-                            )}
-
-                            <button
-                                className="bg-teal-500 hover:bg-teal-700 text-white py-2 px-4 rounded mr-2"
-                                onClick={() => handleUpdateClick(post)}
-                            >
-                                Update
-                            </button>
-                            <button
-                                className="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded"
-                                onClick={() => handleDeleteClick(post.id)}
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    ))
+                {loading ? (
+                    <Spinner />
                 ) : (
-                    <p>No daily posts available.</p>
+                    currentPosts.length > 0 ? (
+                        currentPosts.map((post, index) => (
+                            <div
+                                key={index}
+                                className="bg-gray-800 text-white rounded-lg shadow-lg p-6 mb-4"
+                            >
+                                <h2 className="text-2xl font-bold mb-4">{post.content}</h2>
+                                <p className="mb-4"><strong>Date:</strong> {formatDate(new Date(post.date))}</p>
+                                <p className="mb-4"><strong>Posted By:</strong> {post.postedBy}</p>
+                                {post.imgUrl && (
+                                    <div className="mb-4 flex justify-center">
+                                        <img src={post.imgUrl} alt="Post" className="w-full h-auto rounded-lg" />
+                                    </div>
+                                )}
+
+                                <button
+                                    className="bg-teal-500 hover:bg-teal-700 text-white py-2 px-4 rounded mr-2"
+                                    onClick={() => handleUpdateClick(post)}
+                                >
+                                    Update
+                                </button>
+                                <button
+                                    className="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded"
+                                    onClick={() => handleDeleteClick(post)}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        ))
+                    ) : (
+                        <p>No daily posts available.</p>
+                    )
                 )}
             </div>
 
@@ -214,21 +234,15 @@ export default function UpdateDailyPost() {
 
             <div className="flex justify-center mt-4">
                 <button
+                    className="bg-teal-500 hover:bg-teal-700 text-white py-2 px-4 rounded mr-2"
                     onClick={prevPage}
-                    className={`page-link mx-2 px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === 1 ? 'cursor-not-allowed text-gray-500' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
                     disabled={currentPage === 1}
                 >
                     Previous
                 </button>
                 <button
-                    onClick={() => paginate(currentPage)}
-                    className={`page-link px-4 py-2 rounded shadow-md border border-teal-500 text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg`}
-                >
-                    {currentPage}
-                </button>
-                <button
+                    className="bg-teal-500 hover:bg-teal-700 text-white py-2 px-4 rounded"
                     onClick={nextPage}
-                    className={`page-link mx-2 px-4 py-2 rounded shadow-md border border-teal-500 ${currentPage === Math.ceil(posts.length / postsPerPage) ? 'cursor-not-allowed text-gray-500' : 'text-teal-500 hover:text-white hover:bg-teal-500 transition transform hover:translate-y-1 hover:shadow-lg'}`}
                     disabled={currentPage === Math.ceil(posts.length / postsPerPage)}
                 >
                     Next
